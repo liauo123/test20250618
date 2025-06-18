@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>必要還是想要？</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      padding: 1em;
+      background: #f9f9f9;
+      color: #333;
+    }
+    h1 {
+      text-align: center;
+      color: #4CAF50;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1em;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #ccc;
+      text-align: center;
+      font-size: 1.2em;
+    }
+    button {
+      margin-top: 1em;
+      padding: 10px 20px;
+      font-size: 1.2em;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 8px;
+    }
+    #result, #leaderboard {
+      margin-top: 1em;
+      font-size: 1.1em;
+    }
+    input[type="text"] {
+      font-size: 1em;
+      padding: 5px;
+      width: 80%;
+    }
+  </style>
+</head>
+<body>
+  <h1>必要還是想要？</h1>
+  <table>
+    <tr>
+      <th>物品</th>
+      <th>必要（上學要用）</th>
+      <th>想要（只是喜歡）</th>
+    </tr>
+    <tr><td>制服</td><td><input type="radio" name="item0" value="必要"></td><td><input type="radio" value="想要" name="item0"></td></tr>
+    <tr><td>彩色鉛筆</td><td><input type="radio" name="item1" value="必要"></td><td><input type="radio" value="想要" name="item1"></td></tr>
+    <tr><td>午餐</td><td><input type="radio" name="item2" value="必要"></td><td><input type="radio" value="想要" name="item2"></td></tr>
+    <tr><td>漂亮貼紙</td><td><input type="radio" name="item3" value="必要"></td><td><input type="radio" value="想要" name="item3"></td></tr>
+    <tr><td>書包壞掉可以換</td><td><input type="radio" name="item4" value="必要"></td><td><input type="radio" value="想要" name="item4"></td></tr>
+    <tr><td>新款玩具</td><td><input type="radio" name="item5" value="必要"></td><td><input type="radio" value="想要" name="item5"></td></tr>
+  </table>
+
+  <button onclick="submitAnswer()">完成並查看成績</button>
+
+  <div id="result"></div>
+
+  <div id="nameInput" style="display:none;">
+    <p>請輸入你的名字：</p>
+    <input type="text" id="playerName">
+    <button onclick="submitScore()">送出分數</button>
+  </div>
+
+  <div id="leaderboard"></div>
+
+  <script>
+    const correctAnswers = ["必要", "想要", "必要", "想要", "必要", "想要"];
+    const apiUrl = "https://script.google.com/macros/s/AKfycbxgBGyr5mDfVFEE_KLBgTJiID8fcFilo4Tv7gj4ztA7jvBzvWJAEGrt3P3x9-etk-Sr/exec";
+
+    function submitAnswer() {
+      let score = 0;
+      for (let i = 0; i < correctAnswers.length; i++) {
+        const selected = document.querySelector(`input[name="item${i}"]:checked`);
+        if (selected && selected.value === correctAnswers[i]) score++;
+      }
+      document.getElementById('result').innerHTML = `你答對了 <b>${score}</b> 題！`;
+      document.getElementById('nameInput').style.display = "block";
+      window.playerScore = score; // 儲存分數
+    }
+
+    function submitScore() {
+      const name = document.getElementById('playerName').value.trim();
+      if (!name) {
+        alert("請輸入名字！");
+        return;
+      }
+      fetch(apiUrl, {
+        method: "POST",
+        body: JSON.stringify({ name, score: window.playerScore })
+      }).then(() => {
+        loadLeaderboard();
+        alert("成績已送出！");
+      }).catch(() => alert("送出失敗！"));
+    }
+
+    function loadLeaderboard() {
+      fetch(apiUrl)
+        .then(res => res.json())
+        .then(data => {
+          let html = "<h2>排行榜（前5名）</h2><ol>";
+          data.forEach(p => {
+            html += `<li>${p.name}：${p.score} 分（${p.time}）</li>`;
+          });
+          html += "</ol>";
+          document.getElementById("leaderboard").innerHTML = html;
+        }).catch(() => {
+          document.getElementById("leaderboard").innerHTML = "<p>無法載入排行榜</p>";
+        });
+    }
+
+    loadLeaderboard(); // 載入時自動載排行榜
+  </script>
+</body>
+</html>
